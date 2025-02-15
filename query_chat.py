@@ -1,67 +1,83 @@
-from google.oauth2 import service_account
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from google.auth.transport.requests import Request
-import datetime
+import numpy as np
+from numpy.linalg import norm
 from openai import OpenAI
-from urllib.request import urlopen
-import json
-import socket
-import requests
 
+# Initialize OpenAI Client (Replace with a Secure API Key)
+client = OpenAI(api_key="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")
 
-def get_ip():
-    hostname = socket.gethostname()
-    IPAddr = socket.gethostbyname(hostname)
-    return IPAddr
+def get_embedding(text):
+    """Generate an embedding using OpenAI."""
+    response = client.embeddings.create(
+        model="text-embedding-ada-002",
+        input=text
+    )
+    return np.array(response.data[0].embedding)
 
+# Generate a proper reference embedding instead of a random one
+test_embedding = get_embedding("This flower is a rose")
 
-client = OpenAI(api_key="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")
-import re
-import os
-
-SCOPES = ['https://www.googleapis.com/auth/calendar']
-SERVICE_ACCOUNT_FILE = '/Users/rakshagovind/gcalagent/glassy-tube-445906-i6-c1672dc1a980.json'
-
-
-creds = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-
-service = build('calendar', 'v3', credentials=creds)
+def cosine_similarity(vec1, vec2):
+    """Calculate cosine similarity between two embeddings."""
+    return np.dot(vec1, vec2) / (norm(vec1) * norm(vec2))
 
 def process_user_input(user_input):
+    """Compare user input against test embedding and generate AI response."""
+    user_embedding = get_embedding(user_input)
+    similarity_score = cosine_similarity(user_embedding, test_embedding)
+    quality_score = round(similarity_score * 5, 1)  # Scale from 0 to 5
+
     prompt = f"""
-    User provided the following audio input: "{user_input}".
-    Validate the input with the embedding provided and give a score of 1-5 based on the quality of the goal.
+    The user provided the following input: "{user_input}".
+    
+    The expected reference phrase is: "This flower is a rose".
+    Mark them as correct if they mention the correct flower name, even if the full sentence isn't exact.
+    The similarity score between the user input and the reference is {similarity_score:.2f}.
+    
+    User is someone with cognitive disabilities, so:
+    - Provide a response that is **easy to understand**.
+    - Guide them **towards the correct answer** without being too strict.
+    - If the classification is wrong but the category is correct, help refine their answer.
+    - Do **not** mention the correct flower name directly. Instead, prompt them to give the correct answer.
+    - If the user doesn't get it correctly after 4 tries, give them multiple choices.
+
+    **Your task:**
+    - If the score is high (≥0.8), confirm the input as correct and end the conversation.
+    - If the score is medium (0.5-0.8), suggest a refined version.
+    - If the score is low (<0.5), ask the user for clarification.
+
+    Provide an improved version of the input if necessary.
     """
+
     completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        store=True,
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
+        model="gpt-4o",
+        messages=[{"role": "user", "content": prompt}]
     )
-    return completion.choices[0].message.content
 
-def parse_event_details(response):
-    print(response)
-    lines = response.split('%')
-    title = lines[0]
-    description = lines[1]
-    print(title)
-    print(description)
-    return title, description
+    ai_response = completion.choices[0].message.content
 
+    return {
+        "similarity_score": similarity_score,
+        "quality_score": quality_score,
+        "ai_response": ai_response
+    }
 
-def main():
-    user_input = input("What goal would you like to achieve? ")
-    ai_response = process_user_input(user_input)
-    summary, description = parse_event_details(ai_response)
-    print(ai_loc_response)
-    start_time = datetime.datetime(2024, 12, 26, 13, 0, 0) 
-    end_time = start_time + datetime.timedelta(minutes=30)
+def chat():
+    """Interactive chat loop with AI feedback."""
+    print("\n🌸 Welcome to the Flower Identification Chat! 🌸")
+    print("Type 'exit' to quit.\n")
+
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() == "exit":
+            print("\n👋 Goodbye! Have a great day!")
+            break
+        
+        result = process_user_input(user_input)
+
+        print(f"\n🔹 Similarity Score: {result['similarity_score']:.2f}")
+        print(f"🔸 Quality Score: {result['quality_score']}/5")
+        print("\n💬 AI Response:\n" + result['ai_response'])
+        print("\n" + "="*50 + "\n")  # Separator for readability
 
 if __name__ == '__main__':
-    main()
-
+    chat()
