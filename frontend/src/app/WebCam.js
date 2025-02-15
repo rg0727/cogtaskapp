@@ -16,7 +16,7 @@ const VideoCapture = () => {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
-      const sendInterval = 1000 / 5; // Send rate: 10 FPS (100ms per frame)
+      const sendInterval = 1; // Send rate: 10 FPS (100ms per frame)
 
       socket = io('http://localhost:8080');
 
