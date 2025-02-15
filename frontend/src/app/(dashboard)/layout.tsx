@@ -1,23 +1,28 @@
 import type React from "react";
 import Navbar from "@/components/navbar";
 import { Inter } from "next/font/google";
+import NeuralBackgroundLayout from "@/components/NeuralBackgroundLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Dashboard - My App",
-  description: "Dashboard section of My App",
+  title: "My App",
+  description: "An app with a custom navbar",
 };
 
-export default function DashboardLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className={inter.className}>
-      <Navbar />
-      <main>{children}</main>
-    </div>
+    <html lang="en" className={inter.className}>
+      <body>
+        <NeuralBackgroundLayout>
+          <Navbar />
+          <main>{children}</main>
+        </NeuralBackgroundLayout>
+      </body>
+    </html>
   );
 }
