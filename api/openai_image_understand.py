@@ -11,7 +11,7 @@ from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_KEY"))
 
-def ask_openai():
+def ask_openai(img_url):
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -22,7 +22,7 @@ def ask_openai():
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+                            "url": img_url,
                         },
                     },
                 ],
