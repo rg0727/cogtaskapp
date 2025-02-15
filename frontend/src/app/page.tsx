@@ -48,7 +48,9 @@ export default function Home() {
                 </p>
               </div>
               <div className="space-x-4">
-                <Button>Download Now</Button>
+                <Link href="/dashboard">
+                  <Button>Start Now</Button>
+                </Link>
                 <Button variant="outline">Learn More</Button>
               </div>
             </div>
@@ -81,7 +83,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-        <section className="w-full py-12 md:py-24 lg:py-32">
+        <section className="w-full py-12 md:py-24 lg:py-32" id="about">
           <div className="container px-4 md:px-6">
             <div className="grid items-center gap-6 lg:grid-cols-2 lg:gap-12 xl:grid-cols-2">
               <Image
