@@ -33,4 +33,4 @@ def ask_openai(img_url):
 
     print(response.choices[0])
 
-ask_openai()
+# ask_openai()
