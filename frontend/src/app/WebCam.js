@@ -2,19 +2,19 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Button, Card, Row } from 'antd';
+import axios from 'axios';
 
-const Webcam = () => {
+const VideoCapture = () => {
   const videoRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
-  const websocket = useRef(null);
 
   const startCamera = async () => {
     try {
-      websocket.current = new WebSocket('http://localhost:8080');
-      websocket.current.onopen = () => {
-        console.log('connected');
-      };
+      // websocket.current = new WebSocket('http://localhost:8080/');
+      // websocket.current.onopen = () => {
+      //   console.log('connected');
+      // };
 
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       mediaStreamRef.current = stream;
@@ -22,9 +22,25 @@ const Webcam = () => {
       videoRef.current.play();
       mediaRecorderRef.current = new MediaRecorder(stream);
 
-      mediaRecorderRef.current.ondataavailable = (e) => {
+      
+
+      mediaRecorderRef.current.ondataavailable = async(e) => {
         if (e.data.size > 0) {
-          websocket.current.send(e.data);
+          
+          await axios.post(
+            'http://localhost:8080/process_frame', 
+            { image: e.data,},
+            {
+              headers:{
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": '*',
+                // "Access-Control-Allow-Methods": 'PUT, GET, POST, DELETE, OPTIONS',
+                // "Access-Control-Allow-Headers": 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+              },
+            },
+          )
+          .then((response) => console.log(response.data))
+          .catch((error) => console.error('Error sending frame to backend:', error));
         }
       };
 
@@ -74,16 +90,75 @@ const Webcam = () => {
           onClick={() => startCamera()}
           style={{ margin: '1rem' }}
         >
-          Comenzar Sesión
+          Start
         </Button>
         <Button style={{ margin: '1rem' }}
           type="danger"
           onClick={() => stopCamera()}>
-          Terminar Sesión
+          End
         </Button>
       </Row>
     </Card>
   );
 };
 
-export default Webcam;
+export default VideoCapture;
+// import { useEffect, useRef } from 'react';
+// import axios from 'axios';
+
+// const VideoCapture = () => {
+//   const videoRef = useRef(null);
+//   const canvasRef = useRef(null);
+
+//   useEffect(() => {
+//     const captureVideo = async () => {
+//       const video = videoRef.current;
+//       const canvas = canvasRef.current;
+//       const context = canvas.getContext('2d');
+
+//       // Access the webcam
+//       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+//       video.srcObject = stream;
+//       video.play();
+
+//       // Capture frames and send to Flask backend
+//       const captureFrame = async () => {
+//         context.drawImage(video, 0, 0, canvas.width, canvas.height);
+//         const imageData = canvas.toDataURL('image/jpeg');
+//         console.log(imageData, "imdata")
+
+        
+//           await axios.post(
+//             'http://localhost:8080/process_frame', 
+//             { image: imageData,},
+//             {
+//               headers:{
+//                 "Content-Type": "application/json",
+//                 "Access-Control-Allow-Origin": '*',
+//                 // "Access-Control-Allow-Methods": 'PUT, GET, POST, DELETE, OPTIONS',
+//                 // "Access-Control-Allow-Headers": 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+//               },
+//             },
+//           )
+//           .then((response) => console.log(response.data))
+//           .catch((error) => console.error('Error sending frame to backend:', error));
+        
+
+//         requestAnimationFrame(captureFrame);
+//       };
+
+//       captureFrame();
+//     };
+
+//     captureVideo();
+//   }, []);
+
+//   return (
+//     <div>
+//       <video ref={videoRef} width="640" height="480" style={{ display: 'none' }} />
+//       <canvas ref={canvasRef} width="640" height="480" />
+//     </div>
+//   );
+// };
+
+// export default VideoCapture;
