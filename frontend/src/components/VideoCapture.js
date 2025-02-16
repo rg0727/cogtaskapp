@@ -17,7 +17,7 @@ import path from "path";
 
 // const filePath = getFilePath(file_location);
 
-const VideoCapture = ({ isCaptured, onCaptureComplete, game_id }  ) => {
+const VideoCapture = ({ isCaptured, onCaptureComplete, game_id }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   let socket = useRef(null);
@@ -40,21 +40,34 @@ const VideoCapture = ({ isCaptured, onCaptureComplete, game_id }  ) => {
   }, [isCaptured]);
 
   const sendFrame = () => {
-    if (latestFrame) {
-      // latestFrame = frame;
-      setCapturedImage(latestFrame);
-      setShowVideo(false);
-      setShowCapturedImage(true);
+    return new Promise((resolve, reject) => {
+      if (latestFrame) {
+        setCapturedImage(latestFrame);
+        setShowVideo(false);
+        setShowCapturedImage(true);
 
-      let data = {
-        "id":game_id, 
-        "image":latestFrame
+        const data = {
+          id: game_id, // Replace with your actual game_id
+          image: latestFrame,
+        };
+
+        // Emit the frame data to the server
+        socket.emit("frame", data, (response) => {
+          if (response && response.success) {
+            console.log("Frame sent successfully:", response);
+            resolve(response); // Resolve the promise with the server's response
+          } else {
+            console.error(
+              "Error sending frame:",
+              response?.error || "Unknown error"
+            );
+            reject(response?.error || "Error sending frame"); // Reject the promise with an error
+          }
+        });
+      } else {
+        reject("No frame available to send.");
       }
-      socket.send(data); // Send the latest frame
-      console.log("Frame sent");
-      getTextResult();
-      console.log("Received text result");
-    }
+    });
   };
 
   const getTextResult = () => {

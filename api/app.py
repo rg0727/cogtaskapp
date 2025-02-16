@@ -7,6 +7,7 @@ import wave
 import speech_recognition as sr
 import threading
 import time
+from backend.db import handle_capture_iris
 
 from openai_image_understand import ask_openai
 
@@ -137,7 +138,8 @@ def handle_message(msg):
     if msg['id'] == 1:
         print("game1")
         image = msg['image']
-        # add processing here
+        most_sim = handle_capture_iris(image)
+        SocketIO.emit('response', most_sim, room=request.sid)
     elif msg['id'] == 2:
         print("game2")
         process_frame(msg['image'])

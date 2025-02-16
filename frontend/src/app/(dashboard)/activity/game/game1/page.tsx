@@ -122,9 +122,6 @@ export default function Page() {
                 exit={{ opacity: 0, y: 20 }}
               >
                 <div className="p-6">
-                  <h2 className="text-2xl font-bold mb-4 text-card-foreground">
-                    Chat
-                  </h2>
                   <Chat
                     apiCallResult={similarityScore}
                     onScoreUpdate={updateSimilarityScore}
