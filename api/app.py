@@ -136,10 +136,11 @@ def process_frame(msg):
 def handle_message(msg):
     if msg['id'] == 1:
         print("game1")
+        image = msg['image']
         # add processing here
     elif msg['id'] == 2:
         print("game2")
-        process_frame(msg)
+        process_frame(msg['image'])
 
 import atexit
 atexit.register(cleanup)
