@@ -106,7 +106,9 @@ export default function Page() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
                     >
-                      <NeuralChallenge imageUrl={fileLocation} />
+                      <div className="flex justify-center items-center">
+                        <img src={`/api/get-image?image=${encodeURIComponent(fileLocation)}`} alt="Captured" className="max-w-xs mx-auto" />
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

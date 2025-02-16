@@ -63,7 +63,7 @@ const VideoCapture = ({ isCaptured, onCaptureComplete, game_id }  ) => {
     //   setResultOutput(data);
     //   onTextUpdate(data);
     // });
-    const data = "boba.png";
+    const data = "chair.jpg";
     console.log(data);
     setResultOutput(data);
     onCaptureComplete(data);
