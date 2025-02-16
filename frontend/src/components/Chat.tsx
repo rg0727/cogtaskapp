@@ -41,7 +41,8 @@ export function Chat({ apiCallResult }: ChatProps) {
     setShowAnalysis(true);
     setHasRecorded(true);
     handleTranscribe();
-    console.log(getAudioResponse());
+    // getAudioResponse();
+    console.log(transcription);
   };
 
   // Meant for Chat Component
@@ -49,14 +50,13 @@ export function Chat({ apiCallResult }: ChatProps) {
     socket.emit("transcribe_audio");
   };
 
-  const getAudioResponse = () => {
-    socket.on(
-      "transcription",
-      (data: { transcription: SetStateAction<string> }) => {
-        setTranscription(data.transcription);
-      }
-    );
-  };
+  // const getAudioResponse = () => {
+  //   socket.once("transcription", (data: { transcription: string }) => {
+  //     console.log("Transcription received:", data.transcription);
+  //     setTranscription(data.transcription);
+  //   });
+  // };
+  
 
   const toggleRecording = () => {
     if (!isRecording) {
@@ -86,6 +86,18 @@ export function Chat({ apiCallResult }: ChatProps) {
     // Simulating API call result update
     console.log("API Call Result:", apiCallResult);
   }, [apiCallResult]);
+
+  useEffect(() => {
+    socket.on("transcription", (data: { transcription: string }) => {
+      console.log("Transcription received:", data.transcription);
+      setTranscription(data.transcription);
+    });
+  
+    return () => {
+      socket.off("transcription"); // Clean up event listener when component unmounts
+    };
+  }, []);
+  
 
   const toggleView = () => {
     setShowAnalysis(!showAnalysis);
@@ -144,7 +156,7 @@ export function Chat({ apiCallResult }: ChatProps) {
                   <div>
                     <p className="font-semibold mb-2">Audio Response:</p>
                     <div className="bg-muted p-2 rounded-md">
-                      {audioResponse}
+                      {transcription}
                     </div>
                   </div>
                 </div>

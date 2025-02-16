@@ -51,14 +51,14 @@ export default function Page() {
       setApiResult(data.status); // Update API result for chat
     });
 
-    socket.on("transcription", (data) => {
-      setTranscription(data.transcription);
-      setApiResult(data.transcription); // Update API result for chat
-    });
+    // socket.on("transcription", (data) => {
+    //   setTranscription(data.transcription);
+    //   setApiResult(data.transcription); // Update API result for chat
+    // });
 
     return () => {
       socket.off("recording_status");
-      socket.off("transcription");
+      // socket.off("transcription");
     };
   }, []);
 
