@@ -2,24 +2,50 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+
+interface Neuron {
+  id: number;
+  x: number;
+  y: number;
+}
+
+interface Connection {
+  id: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  opacity: number;
+  duration: number;
+}
 
 function NeuralConnections({ position }: { position: number }) {
-  const neurons = Array.from({ length: 20 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 700 - 350,
-    y: Math.random() * 350 - 175,
-  }));
+  const [neurons, setNeurons] = useState<Neuron[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
 
-  const connections = neurons.flatMap((neuron, i) =>
-    neurons.slice(i + 1).map((otherNeuron, j) => ({
-      id: `${i}-${j}`,
-      x1: neuron.x,
-      y1: neuron.y,
-      x2: otherNeuron.x,
-      y2: otherNeuron.y,
-      opacity: Math.random() * 0.5 + 0.1,
-    }))
-  );
+  useEffect(() => {
+    const generatedNeurons = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 700 - 350,
+      y: Math.random() * 350 - 175,
+    }));
+
+    const generatedConnections = generatedNeurons.flatMap((neuron, i) =>
+      neurons.slice(i + 1).map((otherNeuron, j) => ({
+        id: `${i}-${j}`,
+        x1: neuron.x,
+        y1: neuron.y,
+        x2: otherNeuron.x,
+        y2: otherNeuron.y,
+        opacity: Math.random() * 0.5 + 0.1,
+        duration: 5 + Math.random() * 5, // Store random duration
+      }))
+    );
+
+    setNeurons(generatedNeurons);
+    setConnections(generatedConnections);
+  }, []);
 
   return (
     <div className="absolute inset-0 pointer-events-none">
@@ -45,7 +71,7 @@ function NeuralConnections({ position }: { position: number }) {
               opacity: [0, connection.opacity, 0],
             }}
             transition={{
-              duration: 5 + Math.random() * 5,
+              duration: connection.duration, // Use stored duration
               repeat: Number.POSITIVE_INFINITY,
               ease: "linear",
             }}
