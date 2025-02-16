@@ -8,6 +8,8 @@ import { Chat } from "@/components/Chat";
 import { motion, AnimatePresence } from "framer-motion";
 import io from "socket.io-client";
 
+import VideoCapture from "@/components/VideoCapture";
+
 interface IrisData {
   img: string;
   // Add other properties if needed
@@ -110,7 +112,7 @@ export default function Page() {
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-grow">
                 <div className="flex flex-col">
-                  <NeuralInterface />
+                  <VideoCapture game_id={1}/>
                 </div>
                 <AnimatePresence>
                   {isCaptured && (
