@@ -8,6 +8,8 @@ import speech_recognition as sr
 import threading
 import time
 
+from openai_image_understand import ask_openai
+
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -126,6 +128,18 @@ def cleanup():
         stream.close()
     audio.terminate()
     print("Cleaned up resources.")
+
+def process_frame(msg):
+    ask_openai(img_url=msg)
+    
+@socketio.on('message')
+def handle_message(msg):
+    if msg['id'] == 1:
+        print("game1")
+        # add processing here
+    elif msg['id'] == 2:
+        print("game2")
+        process_frame(msg)
 
 import atexit
 atexit.register(cleanup)

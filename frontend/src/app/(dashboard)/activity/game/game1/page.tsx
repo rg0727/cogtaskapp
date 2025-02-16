@@ -112,7 +112,7 @@ export default function Page() {
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-grow">
                 <div className="flex flex-col">
-                  <VideoCapture />
+                  <VideoCapture game_id={1}/>
                 </div>
                 <AnimatePresence>
                   {isCaptured && (

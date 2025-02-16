@@ -5,7 +5,7 @@ import io from 'socket.io-client';
 
 // let socket;
 
-const VideoCapture = () => {
+const VideoCapture = ( game_id ) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   let socket = useRef(null);
@@ -28,7 +28,12 @@ const VideoCapture = () => {
       setCapturedImage(latestFrame);
       setShowVideo(false);
       setShowCapturedImage(true);
-      socket.send(latestFrame); // Send the latest frame
+
+      let data = {
+        "id":game_id, 
+        "image":latestFrame
+      }
+      socket.send(data); // Send the latest frame
       console.log("Frame sent");
     }
   };
@@ -67,10 +72,7 @@ const VideoCapture = () => {
           <button onClick={sendFrame}>woohoo</button>
         </>
       }
-    
-      {!showCapturedImage && 
-        <img src={latestFrame}/>
-      }
+
       {capturedImage && 
         <img src={capturedImage}/>
       }
