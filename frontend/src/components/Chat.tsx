@@ -1,33 +1,77 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, SetStateAction } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import io from "socket.io-client";
 
 interface ChatProps {
-  apiCallResult: string;
+  apiCallResult: number; // similiarity score
 }
 export function Chat({ apiCallResult }: ChatProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [transcription, setTranscription] = useState("");
   const [hasRecorded, setHasRecorded] = useState(false);
   const [audioResponse, setAudioResponse] = useState("");
   const [similarityScore, setSimilarityScore] = useState(0);
+  const socket = io("http://localhost:8080");
 
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
-    if (isRecording) {
-      // Audio recording ended, simulate API call and show analysis
-      simulateAudioResponse();
-      setShowAnalysis(true);
-      setHasRecorded(true);
-    }
+  // const toggleRecording = () => {
+  //   setIsRecording(!isRecording);
+  //   if (isRecording) {
+  //     // Audio recording ended, simulate API call and show analysis
+  //     simulateAudioResponse();
+  //     setShowAnalysis(true);
+  //     setHasRecorded(true);
+  //   }
+  // };
+
+  // Meant for the Chat Component
+  const handleStartRecording = () => {
+    socket.emit("start_recording");
   };
 
-  const simulateAudioResponse = () => {
+  // Meant for the Chat Component
+  const handleStopRecording = () => {
+    socket.emit("stop_recording");
+    setShowAnalysis(true);
+    setHasRecorded(true);
+    handleTranscribe();
+    console.log(getAudioResponse());
+  };
+
+  // Meant for Chat Component
+  const handleTranscribe = () => {
+    socket.emit("transcribe_audio");
+  };
+
+  const getAudioResponse = () => {
+    socket.on(
+      "transcription",
+      (data: { transcription: SetStateAction<string> }) => {
+        setTranscription(data.transcription);
+      }
+    );
+  };
+
+  const toggleRecording = () => {
+    if (!isRecording) {
+      // Start recording
+      handleStartRecording();
+    } else {
+      // Stop recording
+      handleStopRecording();
+    }
+
+    // Toggle the recording state
+    setIsRecording(!isRecording);
+  };
+
+  const getAudioSimiliarity = () => {
     // Simulating API call for AudioResponse
     const simulatedResponse =
       "This is a simulated audio response from the backend.";
