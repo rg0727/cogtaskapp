@@ -8,7 +8,7 @@ export default function Page() {
 
   const [transcription, setTranscription] = useState("");
   const [status, setStatus] = useState("");
-  const socket = io("http://localhost:3000");
+  const socket = io("http://localhost:8080");
 
   useEffect(() => {
     // Set up listeners for socket events
@@ -29,11 +29,13 @@ export default function Page() {
 
   // Start recording when the button is clicked
   const startRecording = () => {
+    console.log("Starting recording...");
     socket.emit('start_recording');
   };
 
   // Stop recording when the button is clicked
   const stopRecording = () => {
+    console.log("stop recording...");
     socket.emit('stop_recording');
   };
 
@@ -44,8 +46,8 @@ export default function Page() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold">Game 2</h1>
-      <p>Welcome to Game 2! Test your skills with this challenge.</p>
+      <h1 className="text-xl font-bold">Game 1</h1>
+      <p>Welcome to Game 1! Test your skills with this challenge.</p>
 
       <div className="mt-4">
         <button
