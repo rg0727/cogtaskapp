@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from flask_socketio import SocketIO
 import time
 import pyaudio
@@ -9,8 +9,6 @@ import threading
 
 from mistral_image_understand import understand_scene
 from openai_image_understand import ask_openai
-
-import cv2
 import numpy as np
 import base64
 
@@ -23,8 +21,6 @@ import base64
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
-
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Parameters for audio recording
@@ -171,9 +167,9 @@ def process_frame(msg):
     # understand_scene(msg)
     ask_openai(img_url=msg)
 
-@socketio.on('message')
-def handle_message(msg):
-    process_frame(msg)
+# @socketio.on('message')
+# def handle_message(msg):
+#     process_frame(msg)
 
 if __name__ == '__main__':
     socketio.run(app, port=8080, debug=True)
