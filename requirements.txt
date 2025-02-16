@@ -7,3 +7,8 @@ iris
 opencv-python
 mediapipe
 flask
+flask_socketio
+flask_cors
+pyaudio
+python-dotenv
+openai
