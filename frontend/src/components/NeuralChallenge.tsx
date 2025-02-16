@@ -1,20 +1,17 @@
 "use client";
 
 interface NeuralChallengeProps {
-  irisData: {
-    img: string; // or whatever img path?
-    // Add other properties if needed
-  } | null;
+  imageUrl: string | null;
 }
-export function NeuralChallenge({ irisData }: NeuralChallengeProps) {
-  if (!irisData) {
+
+export function NeuralChallenge({ imageUrl }: NeuralChallengeProps) {
+  if (!imageUrl) {
     return <div>Loading iris data...</div>;
   }
-
+  const fullUrl = `../../public/${imageUrl}`;
   return (
     <div>
-      <img src={irisData.img} alt="Iris Analysis" />
-      {/* Add other visualization components */}
+      <img src={fullUrl} alt="Iris Analysis" />
     </div>
   );
 }
