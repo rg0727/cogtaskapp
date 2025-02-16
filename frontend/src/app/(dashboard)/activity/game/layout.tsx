@@ -1,17 +1,11 @@
 "use client";
-import type React from "react";
-// import type { Metadata } from "next";
-import { NeuralInterface } from "@/components/NeuralInterface";
+import React from "react";
+import { NeuralInterface2 } from "@/components/NeuralInterface2";
 import { CognitiveMetrics } from "@/components/CognitiveMetrics";
 import { NeuralChallenge } from "@/components/NeuralChallenge";
 import { usePathname } from "next/navigation";
 
-// export const metadata: Metadata = {
-//   title: "NeuroPeak: Cognitive Enhancement Game",
-//   description: "A cutting-edge game to boost and monitor cognitive performance",
-// };
-
-const excludedRoutes = ["/activity/game/game1"];
+const excludedRoutes = ["/activity/game/game1", "/activity/game/game2"];
 
 export default function GameLayout({
   children,
@@ -23,6 +17,7 @@ export default function GameLayout({
   if (excludedRoutes.includes(pathname)) {
     return <>{children}</>;
   }
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <main className="flex-grow flex items-stretch p-4 sm:p-6 lg:p-8 overflow-auto">
@@ -35,14 +30,13 @@ export default function GameLayout({
                 </h2>
                 {children}
               </div>
-
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-grow">
                 <div className="flex flex-col">
-                  <NeuralInterface />
+                  <NeuralInterface2 />
                 </div>
                 <div className="space-y-8 flex flex-col justify-between">
                   <CognitiveMetrics />
-                  <NeuralChallenge />
+                  <NeuralChallenge irisData={{ img: "path/to/image" }} />
                 </div>
               </div>
             </div>
