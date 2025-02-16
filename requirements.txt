@@ -6,3 +6,4 @@ numpy
 iris
 opencv-python
 mediapipe
+flask
