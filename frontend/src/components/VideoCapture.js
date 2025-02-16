@@ -1,82 +1,104 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
-import path from "path";
-
-// import axios from 'axios';
-
-// let socket;
-// const fileName = "apple-clock.jpeg"
-// api/backend/data
-// expected output is ../../../../../api/backend/data/{fileName}
-
-// const getFilePath = (file_location) => {
-//   const relativePath = `../../../../api/backend/data/${file_location}`;
-//   return path.resolve(__dirname, relativePath);
-// };
-
-// const filePath = getFilePath(file_location);
 
 const VideoCapture = ({ isCaptured, onCaptureComplete, game_id }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  let socket = useRef(null);
+  const socket = useRef(null);
   const [latestFrame, setLatestFrame] = useState(null);
   const [showVideo, setShowVideo] = useState(true);
   const [capturedImage, setCapturedImage] = useState(null);
-  const [showCapturedImage, setShowCapturedImage] = useState("");
-  const [resultOutput, setResultOutput] = useState(""); //expect result from socket.
+  const [showCapturedImage, setShowCapturedImage] = useState(false);
+  const [resultOutput, setTaskMessage] = useState("");
 
-  socket = io("http://localhost:8080");
+  useEffect(() => {
+    socket.current = io("http://localhost:8080");
 
-  socket.on("connect", () => {
-    console.log("Connected to server");
-  });
+    socket.current.on("connect", () => {
+      console.log("Connected to server");
+    });
+
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isCaptured) {
-      sendFrame(); // should expect a socket response back in the form of text
+      console.log("True!");
+      // Call sendFrame and handle the Promise
+      sendFrame()
+        .then((message) => {
+          console.log("Received message:", message);
+          setTaskMessage(message);
+          if (onCaptureComplete) {
+            onCaptureComplete(message);
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          setTaskMessage("Error processing image");
+        });
     }
   }, [isCaptured]);
 
   const sendFrame = () => {
-    return new Promise((resolve, reject) => {
-      if (latestFrame) {
-        setCapturedImage(latestFrame);
-        setShowVideo(false);
-        setShowCapturedImage(true);
+    if (latestFrame) {
+      const data = {
+        id: 2,
+        image: latestFrame,
+      };
 
-        const data = {
-          id: game_id, // Replace with your actual game_id
-          image: latestFrame,
-        };
+      return new Promise((resolve, reject) => {
+        console.log("Sending frame to server...");
 
-        // Emit the frame data to the server
-        socket.emit("frame", data, (response) => {
-          if (response && response.success) {
-            console.log("Frame sent successfully:", response);
-            resolve(response); // Resolve the promise with the server's response
+        // Remove the response callback from emit
+        socket.current.emit("message", data);
+
+        // Set up a one-time listener for the response
+        socket.current.once("task", (response) => {
+          console.log("Received response:", response);
+
+          if (response && response.status === "success") {
+            console.log("Success:", response.message);
+            resolve(response.message);
           } else {
-            console.error(
-              "Error sending frame:",
-              response?.error || "Unknown error"
-            );
-            reject(response?.error || "Error sending frame"); // Reject the promise with an error
+            console.error("Error:", response?.message || "Unknown error");
+            reject(new Error(response?.message || "Error processing frame"));
           }
         });
-      } else {
-        reject("No frame available to send.");
+
+        // Add timeout
+        setTimeout(() => {
+          reject(new Error("Server response timeout"));
+        }, 10000); // 10 second timeout
+      });
+    }
+  };
+
+  // Usage with async/await and error handling
+  const handleCapture = async () => {
+    try {
+      setCapturedImage(latestFrame);
+      setShowVideo(false);
+      setShowCapturedImage(true);
+
+      const result = await sendFrame();
+      console.log("Frame processed successfully:", result);
+      if (onCaptureComplete) {
+        onCaptureComplete(result);
       }
-    });
+    } catch (error) {
+      console.error("Error processing frame:", error);
+      // Handle error (show error message to user, etc.)
+    }
   };
 
   const getTextResult = () => {
-    // socket.on("message", (data) => {
-    //   console.log(data);
-    //   setResultOutput(data);
-    //   onTextUpdate(data);
-    // });
-    const data = "chair.jpg";
+    const data = "boba.png";
     console.log(data);
     setResultOutput(data);
     onCaptureComplete(data);
@@ -87,27 +109,29 @@ const VideoCapture = ({ isCaptured, onCaptureComplete, game_id }) => {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
-      const sendInterval = 1; // Send rate: 10 FPS (100ms per frame)
 
-      // Access the webcam
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
-      video.play();
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        video.srcObject = stream;
+        await video.play();
 
-      // Capture frames and send to Flask backend
-      const captureFrame = async () => {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        setLatestFrame(canvas.toDataURL("image/jpeg"));
-
-        requestAnimationFrame(captureFrame);
-      };
-      captureFrame();
+        const captureFrame = () => {
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          setLatestFrame(canvas.toDataURL("image/jpeg"));
+          requestAnimationFrame(captureFrame);
+        };
+        captureFrame();
+      } catch (error) {
+        console.error("Error accessing webcam:", error);
+      }
     };
     captureVideo();
   }, []);
 
   return (
-    <div>
+    <div className="h-full flex items-center justify-center">
       {showVideo && (
         <>
           <video
@@ -116,13 +140,21 @@ const VideoCapture = ({ isCaptured, onCaptureComplete, game_id }) => {
             height="480"
             style={{ display: "none" }}
           />
-          <canvas ref={canvasRef} width="640" height="480" />
-          {/*<button onClick={sendFrame}>SEND</button> // */}
+          <canvas
+            ref={canvasRef}
+            width="640"
+            height="480"
+            className="max-w-full h-auto"
+          />
         </>
       )}
-
-      {/* {!showCapturedImage && <img src={latestFrame} />} */}
-      {capturedImage && <img src={capturedImage} />}
+      {showCapturedImage && capturedImage && (
+        <img
+          src={capturedImage || "/placeholder.svg"}
+          alt="Captured frame"
+          className="max-w-full h-auto"
+        />
+      )}
     </div>
   );
 };

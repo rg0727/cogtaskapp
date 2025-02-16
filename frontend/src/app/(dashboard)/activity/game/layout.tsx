@@ -11,7 +11,7 @@ import { usePathname } from "next/navigation";
 //   description: "A cutting-edge game to boost and monitor cognitive performance",
 // };
 
-const excludedRoutes = ["/activity/game/game1"];
+const excludedRoutes = ["/activity/game/game1", "/activity/game/game2"];
 
 export default function GameLayout({
   children,
@@ -42,7 +42,6 @@ export default function GameLayout({
                 </div>
                 <div className="space-y-8 flex flex-col justify-between">
                   <CognitiveMetrics />
-                  <NeuralChallenge />
                 </div>
               </div>
             </div>

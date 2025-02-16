@@ -14,8 +14,10 @@ export default function DashboardLayout({
 }) {
   return (
     <NeuralBackgroundLayout>
-      <Navbar />
-      <main>{children}</main>
+      <div className="flex flex-col h-screen">
+        <Navbar />
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
     </NeuralBackgroundLayout>
   );
 }

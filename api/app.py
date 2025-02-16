@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from openai_image_understand import ask_openai
@@ -131,18 +131,39 @@ def cleanup():
     print("Cleaned up resources.")
 
 def process_frame(msg):
-    ask_openai(img_url=msg)
-    
+    try:
+        content = ask_openai(img_url=msg)
+        return {
+            "status": "success",
+            "message": content
+        }
+    except Exception as e:
+        print(f"Error processing frame: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
 @socketio.on('message')
 def handle_message(msg):
-    if msg['id'] == 1:
-        print("game1")
-        image = msg['image']
-        most_sim = handle_capture_iris(image)
-        SocketIO.emit('response', most_sim, room=request.sid)
-    elif msg['id'] == 2:
-        print("game2")
-        process_frame(msg['image'])
+    try:
+        if msg['id'] == 1:
+            print("game1")
+            image = msg['image']
+            most_sim = handle_capture_iris(image)
+            socketio.emit('response', most_sim, room=request.sid)
+        elif msg['id'] == 2:
+            print("game2")
+            response = process_frame(msg['image'])
+            print("Sending response:", response)  # Debug log
+            socketio.emit('task', response, room=request.sid)
+            print("sent task")
+    except Exception as e:
+        print(f"Error in handle_message: {e}")
+        socketio.emit('task', {
+            "status": "error",
+            "message": str(e)
+        }, room=request.sid)
 
 import atexit
 atexit.register(cleanup)

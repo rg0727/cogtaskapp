@@ -1,17 +1,14 @@
 import os
-
-import requests
-import json
-
+import re
 from dotenv import load_dotenv
-load_dotenv()
-
 from openai import OpenAI
 
+load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_KEY"))
 
 def ask_openai(img_url):
+    # Make the API call
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -31,6 +28,9 @@ def ask_openai(img_url):
         max_tokens=300,
     )
 
-    print(response.choices[0])
+    # Extract and parse the response content
+    content = response.choices[0].message.content
+    print("Extracted Content:", content)
+    return content
+# Helper function to parse content (if needed)
 
-# ask_openai()

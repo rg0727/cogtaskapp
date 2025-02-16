@@ -1,129 +1,163 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { NeuralInterface } from "@/components/NeuralInterface";
-import { NeuralChallenge } from "@/components/NeuralChallenge";
 import { Button } from "@/components/ui/button";
-import { Chat } from "@/components/Chat";
 import { motion, AnimatePresence } from "framer-motion";
 import io from "socket.io-client";
-import path from "path";
-
 import VideoCapture from "@/components/VideoCapture";
+import { Chat } from "@/components/Chat";
+
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 20 },
+  transition: { duration: 0.8, ease: [0.6, -0.05, 0.01, 0.99] },
+};
+
+const staggerContainer = {
+  animate: { transition: { staggerChildren: 0.1 } },
+};
 
 export default function Page() {
   const [isCaptured, setIsCaptured] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [apiResult, setApiResult] = useState("Initial state...");
-  const [similarityScore, setSimilarityScore] = useState<number>(0); // used for chat component
-  const [isLoading, setIsLoading] = useState(false);
-  const [transcription, setTranscription] = useState(""); // also used for chat component
+  const [similarityScore, setSimilarityScore] = useState<number>(0);
   const [status, setStatus] = useState("");
   const [fileLocation, setFileLocation] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const socket = io("http://localhost:8080");
-
-  // const adjustedFilePath = path.join(
-  //   __dirname,
-  //   "../../../../../../../api/backend/data",
-  //   fileLocation
-  // );
-
-  // Get the similarity score from the chat component
-  const updateSimilarityScore = (newScore: number) => {
-    setSimilarityScore(newScore);
-  };
 
   useEffect(() => {
     socket.on("recording_status", (data) => {
       setStatus(data.status);
-      setApiResult(data.status); // Update API result for chat
     });
-
-    // socket.on("transcription", (data) => {
-    //   setTranscription(data.transcription);
-    //   setApiResult(data.transcription); // Update API result for chat
-    // });
 
     return () => {
       socket.off("recording_status");
-      // socket.off("transcription");
     };
-  }, []);
+  }, [socket]);
+
   const handleCaptureClick = () => {
-    setIsCaptured(true); // Trigger capture in VideoCapture
-    setTimeout(() => setShowChat(true), 1000);
+    setIsLoading(true);
+    setIsCaptured(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      setShowChat(true);
+    }, 2000);
   };
 
   const handleCaptureComplete = (location: string) => {
-    setFileLocation(location); // Receive file location from VideoCapture
-    // setIsCaptured(false); // Reset trigger
+    setFileLocation(location);
     console.log("Captured File Location:", location);
   };
 
-  const displayCapturedStatus = () => {
-    console.log(isCaptured);
+  const updateSimilarityScore = (newScore: number) => {
+    setSimilarityScore(newScore);
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <main className="flex-grow flex items-stretch p-4 sm:p-6 lg:p-8 overflow-auto">
-        <div className="w-full max-w-7xl mx-auto flex flex-col">
-          <div className="bg-card rounded-lg shadow-2xl overflow-hidden flex-grow flex flex-col">
-            <div className="p-6 flex-grow flex flex-col">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-card-foreground">
-                  Neural Interface
+    <div className="h-full bg-gradient-to-br from-white to-blue-200 flex-grow flex items-center justify-center">
+      <main className="w-full max-w-6xl mx-auto px-4 py-8">
+        <motion.div
+          className="w-full"
+          initial="initial"
+          animate="animate"
+          variants={staggerContainer}
+        >
+          <motion.h1
+            className="text-4xl md:text-5xl font-bold text-center mb-8"
+            variants={fadeInUp}
+          >
+            Neural Interface
+          </motion.h1>
+
+          <motion.div
+            className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden mb-8"
+            variants={fadeInUp}
+          >
+            <div className="p-6 md:p-8">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <h2 className="text-2xl md:text-3xl font-semibold mb-4 md:mb-0">
+                  Video Capture
                 </h2>
-                <Button onClick={displayCapturedStatus}>Status?</Button>
                 <AnimatePresence>
                   {!isCaptured && (
                     <motion.div
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.5 }}
                     >
-                      <Button onClick={handleCaptureClick}>Capture</Button>
-                      {/* upon capture click, save image from camera (opencv) and send to iris*/}
+                      <Button
+                        onClick={handleCaptureClick}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
+                      >
+                        Capture
+                      </Button>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-grow">
-                <div className="flex flex-col">
-                  {/* I want to pass the handleCapture state to be passed into video capture when the state is changed. When handleCapture is true, it should pass that state into videoCapture */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                <motion.div
+                  className="bg-gray-100 rounded-xl overflow-hidden shadow-inner"
+                  variants={fadeInUp}
+                >
                   <VideoCapture
                     isCaptured={isCaptured}
                     onCaptureComplete={handleCaptureComplete}
                     game_id={1}
                   />
-                </div>
+                </motion.div>
                 <AnimatePresence>
                   {isCaptured && (
                     <motion.div
-                      className="flex flex-col"
-                      initial={{ opacity: 0, x: 20 }}
+                      className="bg-gray-100 rounded-xl overflow-hidden shadow-inner flex items-center justify-center"
+                      initial={{ opacity: 0, x: 50 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
+                      exit={{ opacity: 0, x: 50 }}
+                      transition={{ duration: 0.8, ease: "easeInOut" }}
                     >
-                      <div className="flex justify-center items-center">
-                        <img src={`/api/get-image?image=${encodeURIComponent(fileLocation)}`} alt="Captured" className="max-w-xs mx-auto" />
-                      </div>
+                      {isLoading ? (
+                        <motion.div
+                          className="w-12 h-12 md:w-16 md:h-16 border-4 border-blue-500 border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 1,
+                            repeat: Number.POSITIVE_INFINITY,
+                            ease: "linear",
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={`/api/get-image?image=${encodeURIComponent(
+                            fileLocation
+                          )}`}
+                          alt="Captured"
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             </div>
-          </div>
+          </motion.div>
+
           <AnimatePresence>
             {showChat && (
               <motion.div
-                className="mt-8 bg-card rounded-lg shadow-2xl overflow-hidden"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
+                className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden"
+                variants={fadeInUp}
+                initial="initial"
+                animate="animate"
+                exit="exit"
               >
-                <div className="p-6">
+                <div className="p-6 md:p-8">
+                  <h2 className="text-2xl md:text-3xl font-semibold mb-4 md:mb-6">
+                    Chat Interface
+                  </h2>
                   <Chat
                     apiCallResult={similarityScore}
                     onScoreUpdate={updateSimilarityScore}
@@ -132,7 +166,7 @@ export default function Page() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
       </main>
     </div>
   );
