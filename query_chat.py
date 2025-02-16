@@ -30,7 +30,7 @@ def process_user_input(user_input):
     The user provided the following input: "{user_input}".
     
     The expected reference phrase is: "This flower is a rose".
-    Mark them as correct if they mention the correct flower name, even if the full sentence isn't exact.
+    Grab certain keywords from the reference phrase to make the user input more similar to the reference.
     The similarity score between the user input and the reference is {similarity_score:.2f}.
     
     User is someone with cognitive disabilities, so:
@@ -38,7 +38,7 @@ def process_user_input(user_input):
     - Guide them **towards the correct answer** without being too strict.
     - If the classification is wrong but the category is correct, help refine their answer.
     - Do **not** mention the correct flower name directly. Instead, prompt them to give the correct answer.
-    - If the user doesn't get it correctly after 4 tries, give them multiple choices.
+    - If the user doesn't get it correctly after 4 tries, give them multiple categories to choose from.
 
     **Your task:**
     - If the score is high (≥0.8), confirm the input as correct and end the conversation.
