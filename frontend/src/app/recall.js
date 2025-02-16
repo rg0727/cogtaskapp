@@ -1,17 +1,19 @@
 "use client";
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 const fetch = require('node-fetch');
-const fs = require('fs');
+// const fs = require('fs');
 const { LumaAI } = require('lumaai');
 
-const client = new LumaAI({ authToken: process.env.LUMAAI_API_KEY });
+import img from "../../img/blank-black.jpg"
+
+const client = new LumaAI({ authToken: 'luma-d0e9fa43-9cd5-4c7e-b5e6-af6b2156b66d-67bd4324-8391-4888-b955-2ceebc776f4b' });
 
 const Recall = () => {
-    const [image, setImage] = useState('');
+    const [image, setImage] = useState(null);
     const [iteratingPrompt, setIteratingPrompt] = useState('');
 
-    const get5objects = () => {
-        return "elephant dog pringles cookie bottle"
+    function get5objects() {
+        return "elephant dog pringles cookie bottle";
     }
 
     async function generateImage() {
@@ -40,18 +42,18 @@ const Recall = () => {
         console.log(imageUrl, response, "hella");
 
         setImage(imageUrl)
-        const fileStream = fs.createWriteStream(`${generation.id}.jpg`);
-        await new Promise((resolve, reject) => {
-            response.body.pipe(fileStream);
-            response.body.on('error', reject);
-            fileStream.on('finish', resolve);
-        });
+        // const fileStream = fs.createWriteStream(`${generation.id}.jpg`);
+        // await new Promise((resolve, reject) => {
+        //     response.body.pipe(fileStream);
+        //     response.body.on('error', reject);
+        //     fileStream.on('finish', resolve);
+        // });
         
         console.log(`File downloaded as ${generation.id}.jpg`);
     }
 
     async function generateInitialImage() {
-        generateImage(get5objects())
+        generateImage("elephant dog pringles cookie bottle")
     }
 
     async function generateConsequentImages() {
@@ -64,9 +66,9 @@ const Recall = () => {
 
     return (
         <div>
-            <img src={image}/>
-            <button onClick={generateImage}>hehe</button>
-            <input>foo</input>
+            {image && <img src={image}/>}
+            <button onClick={generateConsequentImages}>hehe</button>
+            <input />
         </div>
       );
 }
