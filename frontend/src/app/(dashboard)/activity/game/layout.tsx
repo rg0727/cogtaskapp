@@ -1,19 +1,28 @@
+"use client";
 import type React from "react";
-import type { Metadata } from "next";
+// import type { Metadata } from "next";
 import { NeuralInterface } from "@/components/NeuralInterface";
 import { CognitiveMetrics } from "@/components/CognitiveMetrics";
 import { NeuralChallenge } from "@/components/NeuralChallenge";
+import { usePathname } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "NeuroPeak: Cognitive Enhancement Game",
-  description: "A cutting-edge game to boost and monitor cognitive performance",
-};
+// export const metadata: Metadata = {
+//   title: "NeuroPeak: Cognitive Enhancement Game",
+//   description: "A cutting-edge game to boost and monitor cognitive performance",
+// };
+
+const excludedRoutes = ["/activity/game/game1"];
 
 export default function GameLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
+  if (excludedRoutes.includes(pathname)) {
+    return <>{children}</>;
+  }
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <main className="flex-grow flex items-stretch p-4 sm:p-6 lg:p-8 overflow-auto">
