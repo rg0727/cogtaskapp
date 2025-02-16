@@ -7,6 +7,8 @@ const { LumaAI } = require('lumaai');
 const client = new LumaAI({ authToken: process.env.LUMAAI_API_KEY });
 
 const Recall = () => {
+    const [image, setImage] = useState('');
+    const [iteratingPrompt, setIteratingPrompt] = useState('');
 
     const get5objects = () => {
         return "elephant dog pringles cookie bottle"
@@ -14,7 +16,7 @@ const Recall = () => {
 
     async function generateImage() {
         let generation = await client.generations.image.create({
-            prompt: "{}"
+            prompt: "Create an image with {}"
         });
     
         let completed = false;
@@ -35,6 +37,9 @@ const Recall = () => {
         const imageUrl = generation.assets.image;
     
         const response = await fetch(imageUrl);
+        console.log(imageUrl, response, "hella");
+
+        setImage(imageUrl)
         const fileStream = fs.createWriteStream(`${generation.id}.jpg`);
         await new Promise((resolve, reject) => {
             response.body.pipe(fileStream);
@@ -44,12 +49,24 @@ const Recall = () => {
         
         console.log(`File downloaded as ${generation.id}.jpg`);
     }
-    
-    generateImage();
+
+    async function generateInitialImage() {
+        generateImage(get5objects())
+    }
+
+    async function generateConsequentImages() {
+        generateImage(prompt)
+    }
+
+    useEffect(() => {
+        generateInitialImage()
+    }, [])
 
     return (
         <div>
-          
+            <img src={image}/>
+            <button onClick={generateImage}>hehe</button>
+            <input>foo</input>
         </div>
       );
 }

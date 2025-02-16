@@ -18,7 +18,7 @@ def ask_openai(img_url):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "What's in this image?"},
+                    {"type": "text", "text": "Understand what's in the image passed in. Pay attention to the objects you see. Use these to design a task or question that tests the users executive and visuospatial reasoning abilities"},
                     {
                         "type": "image_url",
                         "image_url": {
