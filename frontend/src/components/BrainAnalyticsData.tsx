@@ -1,4 +1,6 @@
 "use client";
+
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,26 +19,53 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-function BrainNeuralNetwork() {
-  const neurons = Array.from({ length: 30 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 200 - 100,
-    y: Math.random() * 160 - 80,
-  }));
+interface Neuron {
+  id: number;
+  x: number;
+  y: number;
+}
 
-  const connections = neurons.flatMap((neuron, i) =>
-    neurons
-      .slice(i + 1)
-      .filter(() => Math.random() > 0.7)
-      .map((otherNeuron, j) => ({
-        id: `${i}-${j}`,
-        x1: neuron.x,
-        y1: neuron.y,
-        x2: otherNeuron.x,
-        y2: otherNeuron.y,
-        opacity: Math.random() * 0.2 + 0.1,
-      }))
-  );
+interface Connection {
+  id: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  opacity: number;
+  duration: number;
+}
+
+function BrainNeuralNetwork() {
+  const [neurons, setNeurons] = useState<Neuron[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
+
+  useEffect(() => {
+    // Generate neurons only on client-side
+    const generatedNeurons = Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 200 - 100,
+      y: Math.random() * 160 - 80,
+    }));
+
+    // Generate connections only on client-side
+    const generatedConnections = generatedNeurons.flatMap((neuron, i) =>
+      generatedNeurons
+        .slice(i + 1)
+        .filter(() => Math.random() > 0.7)
+        .map((otherNeuron, j) => ({
+          id: `${i}-${j}`,
+          x1: neuron.x,
+          y1: neuron.y,
+          x2: otherNeuron.x,
+          y2: otherNeuron.y,
+          opacity: Math.random() * 0.2 + 0.1,
+          duration: 5 + Math.random() * 5,
+        }))
+    );
+
+    setNeurons(generatedNeurons);
+    setConnections(generatedConnections);
+  }, []);
 
   return (
     <div className="absolute inset-0 pointer-events-none">
@@ -62,7 +91,7 @@ function BrainNeuralNetwork() {
               opacity: [0, connection.opacity, 0],
             }}
             transition={{
-              duration: 5 + Math.random() * 5,
+              duration: connection.duration,
               repeat: Number.POSITIVE_INFINITY,
               ease: "linear",
             }}

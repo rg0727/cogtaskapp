@@ -2,7 +2,7 @@ import React from "react";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import BrainAnalyticsDashboard from "@/components/BrainAnalyticsData";
+import BrainAnalyticsData from "@/components/BrainAnalyticsData";
 
 export default function Dashboard() {
   return (
@@ -25,6 +25,6 @@ export default function Dashboard() {
     //     </div>
     //   </main>
     // </div>
-    <BrainAnalyticsDashboard />
+    <BrainAnalyticsData />
   );
 }
