@@ -58,7 +58,7 @@ const VideoCapture = ({ isCaptured, onCaptureComplete }) => {
     //   setResultOutput(data);
     //   onTextUpdate(data);
     // });
-    const data = "apple-clock.jpeg";
+    const data = "boba.png";
     console.log(data);
     setResultOutput(data);
     onCaptureComplete(data);
