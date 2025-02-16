@@ -17,7 +17,7 @@ import path from "path";
 
 // const filePath = getFilePath(file_location);
 
-const VideoCapture = ({ isCaptured, onCaptureComplete }) => {
+const VideoCapture = ({ isCaptured, onCaptureComplete, game_id }  ) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   let socket = useRef(null);
@@ -45,7 +45,12 @@ const VideoCapture = ({ isCaptured, onCaptureComplete }) => {
       setCapturedImage(latestFrame);
       setShowVideo(false);
       setShowCapturedImage(true);
-      socket.send(latestFrame); // Send the latest frame
+
+      let data = {
+        "id":game_id, 
+        "image":latestFrame
+      }
+      socket.send(data); // Send the latest frame
       console.log("Frame sent");
       getTextResult();
       console.log("Received text result");

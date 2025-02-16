@@ -8,6 +8,8 @@ import speech_recognition as sr
 import threading
 import time
 
+from openai_image_understand import ask_openai
+
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -132,8 +134,14 @@ def process_frame(msg):
     
 @socketio.on('message')
 def handle_message(msg):
-    process_frame(msg)
-    
+    if msg['id'] == 1:
+        print("game1")
+        image = msg['image']
+        # add processing here
+    elif msg['id'] == 2:
+        print("game2")
+        process_frame(msg['image'])
+
 import atexit
 atexit.register(cleanup)
 

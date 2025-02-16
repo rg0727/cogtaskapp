@@ -95,6 +95,7 @@ export default function Page() {
                   <VideoCapture
                     isCaptured={isCaptured}
                     onCaptureComplete={handleCaptureComplete}
+                    game_id={1}
                   />
                 </div>
                 <AnimatePresence>
