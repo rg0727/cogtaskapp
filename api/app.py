@@ -1,18 +1,20 @@
 from flask import Flask, jsonify
 from flask_cors import CORS, cross_origin
 from flask_socketio import SocketIO
-
+from openai import OpenAI
 import pyaudio
 import wave
 import speech_recognition as sr
 import threading
-
+import os
 from mistral_image_understand import understand_scene
 from openai_image_understand import ask_openai
+
 
 import cv2
 import numpy as np
 import base64
+from numpy.linalg import norm
 
 app = Flask(__name__)
 CORS(app)
@@ -31,6 +33,7 @@ stream = None
 frames = []
 recording_thread = None
 recognizer = sr.Recognizer()
+transcription=""
 
 # Function to start recording audio
 def start_recording():
@@ -109,6 +112,97 @@ def transcribe_audio():
         except sr.RequestError:
             print("Error with the speech recognition service")
 
+# Initialize OpenAI Client (Replace with a Secure API Key)
+client = OpenAI(api_key="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")
+
+def get_embedding(text):
+    """Generate an embedding using OpenAI."""
+    response = client.embeddings.create(
+        model="text-embedding-ada-002",
+        input=text
+    )
+    return np.array(response.data[0].embedding)
+
+# Generate a proper reference embedding instead of a random one
+test_embedding = get_embedding("This flower is a rose")
+
+def cosine_similarity(vec1, vec2):
+    """Calculate cosine similarity between two embeddings."""
+    return np.dot(vec1, vec2) / (norm(vec1) * norm(vec2))
+
+def process_user_input(user_input_image1, user_input_image2, user_description):
+    """Compare two images and generate AI response based on the user's description of similarity."""
+    
+    # Generate embeddings for both images
+    image1_name = Image.open(user_input_image1)  # TBD on data input format stored from handler
+    image2_name = user_input_image2.split(".")[0]  # e.g chair, flower, chair-2
+    
+    # Assuming embeddings are generated elsewhere for both images
+    image1_embedding = generate_embedding(image1_name)
+    image2_embedding = generate_embedding(image2_name)
+    
+    # Calculate cosine similarity between the two image embeddings
+    similarity_score = cosine_similarity(image1_embedding, image2_embedding)
+    
+    # Now evaluate the user's description
+    description_similarity = evaluate_description_similarity(user_description, image1_embedding, image2_embedding)
+    
+    # Adjust the quality score to reflect how well the user described the similarity
+    quality_score = round(description_similarity, 1)  # Scale from 0 to 100
+    
+    # Create a prompt for feedback based on description similarity
+    prompt = f"""
+    The user has described the similarity between two images as: "{user_description}"
+    The calculated similarity score between the images is {similarity_score:.2f}.
+    
+    Evaluate how well the user described the similarity:
+    - If the description is highly accurate, score it high (≥ 80).
+    - If the description is somewhat accurate but could be more detailed, score it medium (50-80).
+    - If the description is not accurate or unclear, score it low (<50).
+    
+    Provide feedback based on how well the description matches the actual similarity.
+    """
+    
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    
+    ai_response = completion.choices[0].message.content
+
+    return {
+        "similarity_score": similarity_score,
+        "quality_score": quality_score,
+        "description_similarity_score": description_similarity,
+        "ai_response": ai_response
+    }
+
+def evaluate_description_similarity(user_description, image1_embedding, image2_embedding):
+    """Evaluate how well the user's description matches the similarity between the two images."""
+    # Placeholder for evaluating description similarity
+    # This could use NLP models or other methods to assess if the user's description matches the image similarity
+    description_embedding = generate_description_embedding(user_description)
+    
+    # Calculate similarity between the description and the image embeddings
+    description_similarity = cosine_similarity(description_embedding, (image1_embedding + image2_embedding) / 2)  # Average of both image embeddings
+    
+    return round(description_similarity * 100, 1)
+
+
+
+def chat():
+    """Interactive chat loop with AI feedback."""
+    print("\n🌸 Welcome to the Flower Identification Chat! 🌸")
+    print("Type 'exit' to quit.\n")
+
+    user_input = transcription
+    result = process_user_input(user_input)
+
+    print(f"\n🔹 Similarity Score: {result['similarity_score']:.2f}")
+    print(f"🔸 Quality Score: {result['quality_score']}")
+    print("\n💬 AI Response:\n" + result['ai_response'])
+    print("\n" + "="*50 + "\n")  # Separator for readability
+
 @socketio.on('start_recording')
 def handle_start_recording(data=None):
     start_recording()
@@ -126,8 +220,14 @@ def handle_transcribe_audio(data=None):
     transcription = transcribe_audio()
     socketio.emit('transcription', {"transcription": transcription})
 
-
-
+@socketio.on('chat')
+def handle_transcribe_audio(data=None):
+    result = chat()
+    socketio.emit('similarity_score', {
+        'similarity_score': result['similarity_score'],
+        'quality_score': result['quality_score'],
+        'ai_response': result['ai_response']
+    })
 
 def process_frame(msg):
     # print(msg)

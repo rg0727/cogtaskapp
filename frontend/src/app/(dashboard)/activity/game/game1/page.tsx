@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { NeuralInterface } from "@/components/NeuralInterface";
 import { NeuralChallenge } from "@/components/NeuralChallenge";
 import { Button } from "@/components/ui/button";
 import { Chat } from "@/components/Chat";
 import { motion, AnimatePresence } from "framer-motion";
 import io from "socket.io-client";
+
+import VideoCapture from "@/components/VideoCapture.js";
 
 interface IrisData {
   img: string;
@@ -21,7 +23,7 @@ export default function Page() {
   const [irisData, setIrisData] = useState<IrisData | null>(null);
   const [transcription, setTranscription] = useState("");
   const [status, setStatus] = useState("");
-  const socket = io("http://localhost:8080");
+  const socket = useRef(io("http://localhost:8080"));
 
   const fetchIrisData = async () => {
     try {
@@ -44,68 +46,83 @@ export default function Page() {
     }
   };
 
-  //   const fetchAudioData = async () => {
-  //     try {
-  //       const response = await fetch("/api/audio");
-  //       const data = await response.json();
-
-  //       if (data.success) {
-  //         setApiResult(data.audioData);
-  //         setShowChat(true);
-  //       } else {
-  //         throw new Error("Failed to fetch audio data");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching audio data:", error);
-  //       setApiResult("Error: Failed to process audio data");
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
-
-  //   const handleCapture = async () => {
-  //     setIsCaptured(true);
-  //     setIsLoading(true);
-  //     await fetchAudioData();
-  //   };
-
-  //   const handleSendMessage = (message: string) => {
-  //     // Here you would typically send the message to your API
-  //     console.log("Sending message:", message);
-  //     return "test";
-  //   };
-
   useEffect(() => {
-    socket.on("recording_status", (data) => {
+    socket.current.on("recording_status", (data) => {
       setStatus(data.status);
       setApiResult(data.status); // Update API result for chat
     });
 
-    socket.on("transcription", (data) => {
+    socket.current.on("transcription", (data) => {
       setTranscription(data.transcription);
       setApiResult(data.transcription); // Update API result for chat
     });
 
     return () => {
-      socket.off("recording_status");
-      socket.off("transcription");
+      socket.current.off("recording_status");
+      socket.current.off("transcription");
     };
   }, []);
 
   const handleCapture = async () => {
     setIsCaptured(true);
     setIsLoading(true);
+
+    // Fetch iris data before starting video capture
     await fetchIrisData();
-    socket.emit("start_recording");
+    socket.current.emit("start_recording");
+
+    // Start video capture and frame sending
+    startVideoCapture();
+  };
+
+  const startVideoCapture = () => {
+    const video = document.createElement("video");
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    if (context) {
+      // Access webcam and start capturing frames
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
+        .then((stream) => {
+          video.srcObject = stream;
+          video.play();
+
+          // Set canvas size to match video
+          video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Call captureFrame once the video starts
+            captureFrame(video, canvas, context);
+          };
+        })
+        .catch((error) => {
+          console.error("Error accessing webcam:", error);
+        });
+    }
+  };
+
+  const captureFrame = async (video: HTMLVideoElement, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) => {
+    // Capture frame and send it via socket
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const latestFrame = canvas.toDataURL("image/jpeg");
+    
+    // Send frame data to the server
+    socket.current.send(latestFrame);
+    console.log("Frame sent");
+
+    // Keep capturing frames
+    requestAnimationFrame(() => captureFrame(video, canvas, context));
   };
 
   const handleStopRecording = () => {
-    socket.emit("stop_recording");
+    socket.current.emit("stop_recording");
     setShowChat(true);
   };
 
   const handleTranscribe = () => {
-    socket.emit("transcribe_audio");
+    socket.current.emit("transcribe_audio");
   };
 
   return (
@@ -126,7 +143,6 @@ export default function Page() {
                       exit={{ opacity: 0, y: -20 }}
                     >
                       <Button onClick={handleCapture}>Capture</Button>
-                      {/* upon capture click, save image from camera (opencv) and send to iris*/}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -134,7 +150,7 @@ export default function Page() {
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-grow">
                 <div className="flex flex-col">
-                  <NeuralInterface />
+                  <VideoCapture />
                 </div>
                 <AnimatePresence>
                   {isCaptured && (
