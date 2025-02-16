@@ -10,7 +10,7 @@ def get_image_embedding(image_path):
     inputs = processor(images=image, return_tensors="pt")
     with torch.no_grad():
         embedding = model.get_image_features(**inputs)
-    return embedding.squeeze().numpy().tolist() 
+    return [round(value, 5) for value in embedding.squeeze().numpy().tolist()]
 
 if __name__ == "__main__":
     print(get_image_embedding("data/chair.jpg"))
