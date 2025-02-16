@@ -1,89 +1,64 @@
 "use client";
+import { useEffect, useRef } from 'react';
+import io from 'socket.io-client';
+// import axios from 'axios';
 
-import React, { useRef, useEffect, useState } from 'react';
-import { Button, Card, Row } from 'antd';
+// let socket;
 
-const Webcam = () => {
+const VideoCapture = () => {
   const videoRef = useRef(null);
-  const mediaStreamRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const websocket = useRef(null);
+  const canvasRef = useRef(null);
+  let socket = useRef(null);
+  let latestFrame = useRef(null);
 
-  const startCamera = async () => {
-    try {
-      websocket.current = new WebSocket('http://localhost:8080');
-      websocket.current.onopen = () => {
-        console.log('connected');
+  useEffect(() => {
+    const captureVideo = async () => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      const sendInterval = 1; // Send rate: 10 FPS (100ms per frame)
+
+      socket = io('http://localhost:8080');
+
+      socket.on('connect', () => {
+        console.log('Connected to server');
+      });
+
+      // Access the webcam
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+      video.play();
+
+      // Capture frames and send to Flask backend
+      const captureFrame = async () => {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        latestFrame = canvas.toDataURL('image/jpeg');
+        console.log("imdata")
+
+        // socket.send(imageData)
+        requestAnimationFrame(captureFrame);
       };
 
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      mediaStreamRef.current = stream;
-      videoRef.current.srcObject = stream;
-      videoRef.current.play();
-      mediaRecorderRef.current = new MediaRecorder(stream);
-
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          websocket.current.send(e.data);
+      const sendFrame = () => {
+        if (latestFrame) {
+          socket.send(latestFrame); // Send the latest frame
+          console.log("Frame sent");
         }
       };
 
-      mediaRecorderRef.current.start(1000);
-    } catch (error) {
-      console.error('err', error);
-    }
-  };
-
-  const stopCamera = () => {
-    if (mediaStreamRef.current) {
-      const tracks = mediaStreamRef.current.getTracks();
-      tracks.forEach((track) => {
-        track.stop();
-      });
-      mediaStreamRef.current = null;
-      videoRef.current.srcObject = null;
-    }
-
-    if (websocket.current) {
-      websocket.current.close();
-    }
-
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      stopCamera();
+      captureFrame();
+      setInterval(sendFrame, sendInterval);
     };
+
+    captureVideo();
   }, []);
 
   return (
-    <Card title="Stream">
-      <video
-        ref={videoRef}
-        style={{ width: '100%', height: 'auto' }}
-        autoPlay
-        playsInline
-        muted
-      />
-      <Row justify="center" style={{ marginTop: 'auto' }}>
-        <Button
-          type="primary"
-          onClick={() => startCamera()}
-          style={{ margin: '1rem' }}
-        >
-          Comenzar Sesión
-        </Button>
-        <Button style={{ margin: '1rem' }}
-          type="danger"
-          onClick={() => stopCamera()}>
-          Terminar Sesión
-        </Button>
-      </Row>
-    </Card>
+    <div>
+      <video ref={videoRef} width="640" height="480" style={{ display: 'none' }} />
+      <canvas ref={canvasRef} width="640" height="480" />
+    </div>
   );
 };
 
-export default Webcam;
+export default VideoCapture;
