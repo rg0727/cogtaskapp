@@ -1,0 +1,8 @@
+torch
+transformers
+openai-clip
+pillow
+numpy
+iris
+opencv-python
+mediapipe

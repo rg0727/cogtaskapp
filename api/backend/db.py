@@ -1,6 +1,8 @@
 import iris 
 import os
 from clip import get_image_embedding
+from decimal import Decimal
+
 def connect_to_iris():
     username = 'demo'
     password = 'demo'
@@ -12,8 +14,10 @@ def connect_to_iris():
     connection = iris.connect(CONNECTION_STRING, username, password)
     
     cursor = connection.cursor()
-    tableName = householdObjects
-    tableDefinition = "(name VARCHAR(255), description_vector VECTOR(DOUBLE, 384))"
+    tableName = "householdObjects"
+    vector = get_image_embedding("data/chair.jpg")
+    vectorLen = len(vector)
+    tableDefinition = "(name VARCHAR(255), description_vector VECTOR(DOUBLE,512))"
     # storing vector embeddings in table - store embeddings from CLIP or raw image data for vector searc?
     try:
         cursor.execute(f"DROP TABLE {tableName}")  
@@ -21,16 +25,12 @@ def connect_to_iris():
         pass
     cursor.execute(f"CREATE TABLE {tableName} {tableDefinition}")
     
-    sql = f"""
-        INSERT INTO {tableName}
-        (name, vector) 
-        VALUES (?, TO_VECTOR(?))
-    """
-    for name in os.listdir(data):
-        path = os.path.join(directory, name)
+    sql = "INSERT INTO SQLUser.householdObjects (name, description_vector) VALUES (?, ?)"
+    for name in os.listdir("data"):
+        path = os.path.join("data", name)
         vector = get_image_embedding(path)
-        data = [(name, str(vector))]
-        cursor.execute(sql, data)
+        print(str(vector))
+        cursor.execute(sql, [name, str(vector)])
 
     
     return cursor
@@ -60,3 +60,7 @@ def vectorSearch(cursor, searchImagePath, tableName):
 
 def get_embedding(iris, image_name):
     ## TBD
+    return 0
+
+if __name__ == "__main__":
+    connect_to_iris()
