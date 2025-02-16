@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
-
+from openai_image_understand import ask_openai
 import pyaudio
 import wave
 import speech_recognition as sr
@@ -127,6 +127,13 @@ def cleanup():
     audio.terminate()
     print("Cleaned up resources.")
 
+def process_frame(msg):
+    ask_openai(img_url=msg)
+    
+@socketio.on('message')
+def handle_message(msg):
+    process_frame(msg)
+    
 import atexit
 atexit.register(cleanup)
 

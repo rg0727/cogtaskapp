@@ -9,9 +9,10 @@ import { Progress } from "@/components/ui/progress";
 import io from "socket.io-client";
 
 interface ChatProps {
-  apiCallResult: number; // similiarity score
+  apiCallResult: number;
+  onScoreUpdate: (score: number) => void;
 }
-export function Chat({ apiCallResult }: ChatProps) {
+export function Chat({ apiCallResult, onScoreUpdate }: ChatProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [transcription, setTranscription] = useState("");
@@ -20,58 +21,36 @@ export function Chat({ apiCallResult }: ChatProps) {
   const [similarityScore, setSimilarityScore] = useState(0);
   const socket = io("http://localhost:8080");
 
-  // const toggleRecording = () => {
-  //   setIsRecording(!isRecording);
-  //   if (isRecording) {
-  //     // Audio recording ended, simulate API call and show analysis
-  //     simulateAudioResponse();
-  //     setShowAnalysis(true);
-  //     setHasRecorded(true);
-  //   }
-  // };
-
-  // Meant for the Chat Component
   const handleStartRecording = () => {
     socket.emit("start_recording");
   };
 
-  // Meant for the Chat Component
   const handleStopRecording = () => {
     socket.emit("stop_recording");
     setShowAnalysis(true);
     setHasRecorded(true);
     handleTranscribe();
-    // getAudioResponse();
+    setAudioResponse(transcription);
     console.log(transcription);
+    console.log(audioResponse); // debug line
   };
 
-  // Meant for Chat Component
   const handleTranscribe = () => {
     socket.emit("transcribe_audio");
   };
 
-  // const getAudioResponse = () => {
-  //   socket.once("transcription", (data: { transcription: string }) => {
-  //     console.log("Transcription received:", data.transcription);
-  //     setTranscription(data.transcription);
-  //   });
-  // };
-  
-
   const toggleRecording = () => {
     if (!isRecording) {
-      // Start recording
       handleStartRecording();
     } else {
-      // Stop recording
       handleStopRecording();
+      getAudioSimiliarityScore();
     }
 
-    // Toggle the recording state
     setIsRecording(!isRecording);
   };
 
-  const getAudioSimiliarity = () => {
+  const getAudioSimiliarityScore = () => {
     // Simulating API call for AudioResponse
     const simulatedResponse =
       "This is a simulated audio response from the backend.";
@@ -80,6 +59,7 @@ export function Chat({ apiCallResult }: ChatProps) {
     // Simulating similarity score calculation
     const score = Math.floor(Math.random() * 41) + 60; // Random score between 60 and 100
     setSimilarityScore(score);
+    onScoreUpdate(score);
   };
 
   useEffect(() => {
@@ -92,12 +72,11 @@ export function Chat({ apiCallResult }: ChatProps) {
       console.log("Transcription received:", data.transcription);
       setTranscription(data.transcription);
     });
-  
+
     return () => {
       socket.off("transcription"); // Clean up event listener when component unmounts
     };
   }, []);
-  
 
   const toggleView = () => {
     setShowAnalysis(!showAnalysis);

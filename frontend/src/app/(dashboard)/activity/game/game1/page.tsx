@@ -7,44 +7,30 @@ import { Button } from "@/components/ui/button";
 import { Chat } from "@/components/Chat";
 import { motion, AnimatePresence } from "framer-motion";
 import io from "socket.io-client";
+import path from "path";
 
 import VideoCapture from "@/components/VideoCapture";
-
-interface IrisData {
-  img: string;
-  // Add other properties if needed
-}
 
 export default function Page() {
   const [isCaptured, setIsCaptured] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [apiResult, setApiResult] = useState("Initial state...");
-  const [similarityScore, setSimilarityScore] = useState<number>(0);
+  const [similarityScore, setSimilarityScore] = useState<number>(0); // used for chat component
   const [isLoading, setIsLoading] = useState(false);
-  const [irisData, setIrisData] = useState<IrisData | null>(null);
-  const [transcription, setTranscription] = useState("");
+  const [transcription, setTranscription] = useState(""); // also used for chat component
   const [status, setStatus] = useState("");
+  const [fileLocation, setFileLocation] = useState("");
   const socket = io("http://localhost:8080");
 
-  const fetchIrisData = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/iris");
-      const data = await response.json();
+  // const adjustedFilePath = path.join(
+  //   __dirname,
+  //   "../../../../../../../api/backend/data",
+  //   fileLocation
+  // );
 
-      if (data.success) {
-        setIrisData(data);
-        setApiResult("Iris data captured successfully"); // DUMMY API RETURN DATA... REPLACE WITH ACTUAL DATA
-        setShowChat(true);
-      } else {
-        throw new Error("Failed to fetch iris data");
-      }
-    } catch (error) {
-      console.error("Error fetching iris data:", error);
-      setApiResult("Error: Failed to process iris data");
-    } finally {
-      setIsLoading(false);
-    }
+  // Get the similarity score from the chat component
+  const updateSimilarityScore = (newScore: number) => {
+    setSimilarityScore(newScore);
   };
 
   useEffect(() => {
@@ -63,27 +49,19 @@ export default function Page() {
       // socket.off("transcription");
     };
   }, []);
-
-  const handleCapture = async () => {
-    setIsCaptured(true);
-    setIsLoading(true);
-    await fetchIrisData();
+  const handleCaptureClick = () => {
+    setIsCaptured(true); // Trigger capture in VideoCapture
+    setTimeout(() => setShowChat(true), 1000);
   };
 
-  // Meant for the Chat Component
-  const handleStartRecording = () => {
-    socket.emit("start_recording");
+  const handleCaptureComplete = (location: string) => {
+    setFileLocation(location); // Receive file location from VideoCapture
+    // setIsCaptured(false); // Reset trigger
+    console.log("Captured File Location:", location);
   };
 
-  // Meant for the Chat Component
-  const handleStopRecording = () => {
-    socket.emit("stop_recording");
-    setShowChat(true);
-  };
-
-  // Meant for Chat Component
-  const handleTranscribe = () => {
-    socket.emit("transcribe_audio"); // string
+  const displayCapturedStatus = () => {
+    console.log(isCaptured);
   };
 
   return (
@@ -96,6 +74,7 @@ export default function Page() {
                 <h2 className="text-2xl font-bold text-card-foreground">
                   Neural Interface
                 </h2>
+                <Button onClick={displayCapturedStatus}>Status?</Button>
                 <AnimatePresence>
                   {!isCaptured && (
                     <motion.div
@@ -103,7 +82,7 @@ export default function Page() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                     >
-                      <Button onClick={handleCapture}>Capture</Button>
+                      <Button onClick={handleCaptureClick}>Capture</Button>
                       {/* upon capture click, save image from camera (opencv) and send to iris*/}
                     </motion.div>
                   )}
@@ -112,7 +91,11 @@ export default function Page() {
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-grow">
                 <div className="flex flex-col">
-                  <VideoCapture />
+                  {/* I want to pass the handleCapture state to be passed into video capture when the state is changed. When handleCapture is true, it should pass that state into videoCapture */}
+                  <VideoCapture
+                    isCaptured={isCaptured}
+                    onCaptureComplete={handleCaptureComplete}
+                  />
                 </div>
                 <AnimatePresence>
                   {isCaptured && (
@@ -122,7 +105,7 @@ export default function Page() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
                     >
-                      <NeuralChallenge irisData={irisData} />
+                      <NeuralChallenge imageUrl={fileLocation} />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -141,7 +124,10 @@ export default function Page() {
                   <h2 className="text-2xl font-bold mb-4 text-card-foreground">
                     Chat
                   </h2>
-                  <Chat apiCallResult={similarityScore} />
+                  <Chat
+                    apiCallResult={similarityScore}
+                    onScoreUpdate={updateSimilarityScore}
+                  />
                 </div>
               </motion.div>
             )}
