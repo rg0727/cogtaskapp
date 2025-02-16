@@ -17,6 +17,7 @@ export default function Page() {
   const [isCaptured, setIsCaptured] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [apiResult, setApiResult] = useState("Initial state...");
+  const [similarityScore, setSimilarityScore] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [irisData, setIrisData] = useState<IrisData | null>(null);
   const [transcription, setTranscription] = useState("");
@@ -44,51 +45,20 @@ export default function Page() {
     }
   };
 
-  //   const fetchAudioData = async () => {
-  //     try {
-  //       const response = await fetch("/api/audio");
-  //       const data = await response.json();
-
-  //       if (data.success) {
-  //         setApiResult(data.audioData);
-  //         setShowChat(true);
-  //       } else {
-  //         throw new Error("Failed to fetch audio data");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching audio data:", error);
-  //       setApiResult("Error: Failed to process audio data");
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
-
-  //   const handleCapture = async () => {
-  //     setIsCaptured(true);
-  //     setIsLoading(true);
-  //     await fetchAudioData();
-  //   };
-
-  //   const handleSendMessage = (message: string) => {
-  //     // Here you would typically send the message to your API
-  //     console.log("Sending message:", message);
-  //     return "test";
-  //   };
-
   useEffect(() => {
     socket.on("recording_status", (data) => {
       setStatus(data.status);
       setApiResult(data.status); // Update API result for chat
     });
 
-    socket.on("transcription", (data) => {
-      setTranscription(data.transcription);
-      setApiResult(data.transcription); // Update API result for chat
-    });
+    // socket.on("transcription", (data) => {
+    //   setTranscription(data.transcription);
+    //   setApiResult(data.transcription); // Update API result for chat
+    // });
 
     return () => {
       socket.off("recording_status");
-      socket.off("transcription");
+      // socket.off("transcription");
     };
   }, []);
 
@@ -96,16 +66,22 @@ export default function Page() {
     setIsCaptured(true);
     setIsLoading(true);
     await fetchIrisData();
+  };
+
+  // Meant for the Chat Component
+  const handleStartRecording = () => {
     socket.emit("start_recording");
   };
 
+  // Meant for the Chat Component
   const handleStopRecording = () => {
     socket.emit("stop_recording");
     setShowChat(true);
   };
 
+  // Meant for Chat Component
   const handleTranscribe = () => {
-    socket.emit("transcribe_audio");
+    socket.emit("transcribe_audio"); // string
   };
 
   return (
@@ -163,7 +139,7 @@ export default function Page() {
                   <h2 className="text-2xl font-bold mb-4 text-card-foreground">
                     Chat
                   </h2>
-                  <Chat apiCallResult={apiResult} />
+                  <Chat apiCallResult={similarityScore} />
                 </div>
               </motion.div>
             )}
